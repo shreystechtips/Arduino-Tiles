@@ -1,0 +1,66 @@
+name: Build Arduino Tiles
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: Windows
+            build_command: .\scripts\build_windows.ps1
+            artifact_path: dist/ArduinoTiles-Windows
+          - os: macos-latest
+            platform: macOS
+            build_command: bash scripts/build_macos.sh
+            artifact_path: dist/ArduinoTiles-macOS
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --locked
+
+      - name: Run tests
+        run: uv run pytest -q
+
+      - name: Build application
+        shell: pwsh
+        if: runner.os == 'Windows'
+        run: ${{ matrix.build_command }}
+
+      - name: Build application
+        shell: bash
+        if: runner.os == 'macOS'
+        run: ${{ matrix.build_command }}
+
+      - name: Upload packaged application
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArduinoTiles-${{ matrix.platform }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          retention-days: 14

@@ -1,7 +1,7 @@
 # Arduino Tiles
 
 ![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python)
-![Pygame](https://img.shields.io/badge/Pygame-2.5.5-orange?logo=pygame)
+![Pygame](https://img.shields.io/badge/Pygame--CE-2.5.8-orange?logo=pygame)
 ![Arduino](https://img.shields.io/badge/Arduino-1.8.19-red?logo=arduino)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC_BY--NC_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![made-with-love](https://img.shields.io/badge/Made%20with-❤️-red.svg)](https://shields.io/)
@@ -32,8 +32,7 @@
 
 ### Prerequisites
 - **Python 3.13** or later
-- **Pygame 2.5.5** (`pip install pygame-ce`)
-- **PySerial** for Arduino communication (`pip install pyserial`)
+- **uv** for dependency and virtual-environment management
 - **Arduino IDE** (1.8.19 or later) for uploading the Arduino sketch
 - **Arduino Board** (e.g., Uno) with 4 IR proximity sensors (e.g., FC-51) for hardware input (optional)
 
@@ -43,12 +42,9 @@
    git clone https://github.com/yourusername/arduino-tiles.git
    cd arduino-tiles
    ```
-2. Create a virtual environment and install dependencies:
+2. Create the project environment and install locked dependencies:
    ```bash
-   python -m venv .venv
-   .venv\Scripts\activate  # On Windows
-   source .venv/bin/activate  # On Linux/macOS
-   pip install pygame-ce pyserial
+   uv sync
    ```
 3. Ensure the `assets/` directory contains:
    - `songs/` with `.json` song files (e.g., `Havana.json`)
@@ -61,17 +57,50 @@
    - Upload the sketch to your Arduino board.
 
 ### Building a Standalone Executable
-To create a standalone executable with the `assets/` folder separate:
-```bash
-pip install pyinstaller
-pyinstaller --onedir --windowed --add-data "assets;assets" main.py
+The checked-in `arduino_tiles.spec` bundles the complete `assets/` tree and produces a
+windowed PyInstaller onedir application. Install the project dependencies, including
+PyInstaller, in the active `uv` environment before building.
+
+Build each release on its target operating system; PyInstaller does not produce a
+portable Windows artifact when run on macOS, or a portable macOS artifact when run on
+Windows.
+
+On Windows PowerShell, from the repository root:
+
+```powershell
+uv run pyinstaller --version
+powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1
 ```
-The executable and dependencies will be in `dist/main/`, with `assets/` copied alongside.
+
+On macOS, from the repository root:
+
+```bash
+uv run pyinstaller --version
+bash scripts/build_macos.sh
+```
+
+The scripts clean only the project-local `build/` and `dist/` directories and invoke
+the checked-in spec. The resulting platform-named onedir bundle is under `dist/`.
+
+### GitHub Actions builds
+
+Every push to `main`/`master`, pull request, or manually started workflow runs
+native Windows and macOS builds. Open the workflow run in the repository's
+Actions tab and download `ArduinoTiles-Windows` or `ArduinoTiles-macOS` from
+the Artifacts section. Each artifact is a self-contained onedir application;
+extract it before launching.
+
+### Settings and Sharing
+
+Run the application with `uv run python main.py`. Editable settings are stored in the
+per-user application-data directory rather than inside the installed or bundled
+application. The settings screen can export the portable JSON settings and import a
+file into a review draft; values are applied only after confirmation.
 
 ## Usage
 1. Run the game:
    ```bash
-   python main.py
+   uv run python main.py
    ```
 2. In the main menu:
    - Use the search bar to filter songs.
@@ -119,8 +148,14 @@ arduino-tiles/
 ├── game.py                 # Main game loop and logic
 ├── main_menu.py            # Main menu with song selection
 ├── main.py                 # Application entry point
-├── requirements.txt        # Project depedencies
+├── arduino_tiles.spec      # PyInstaller onedir/windowed build definition
+├── scripts/
+│   ├── build_windows.ps1   # Windows release build
+│   └── build_macos.sh      # macOS release build
+├── pyproject.toml          # Project metadata and dependencies
+├── uv.lock                 # Locked dependency versions
 ├── README.md               # This file
+└── LICENSE
 ```
 
 ## Contributing

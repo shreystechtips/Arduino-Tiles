@@ -2,9 +2,12 @@ import os
 import pygame
 import sys
 
+from settings import Settings
+
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    return os.path.join(os.path.abspath("."), relative_path)
+    """Return an absolute resource path for source and PyInstaller runs."""
+    root = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(root, relative_path)
 
 # Screen dimensions
 SCREEN_WIDTH = 480
@@ -55,6 +58,36 @@ KEYBINDS = {
     pygame.K_j: 2,  # Lane 2
     pygame.K_k: 3   # Lane 3
 }
+
+
+def apply_settings(settings: Settings):
+    """Update legacy module-level consumers from a validated Settings value."""
+    global SERIAL_PORT, BAUD_RATE, FPS, SCREEN_WIDTH, SCREEN_HEIGHT
+    global ASPECT_RATIO, STRIKE_LINE_Y, TILE_WIDTH, KEYBINDS
+
+    if not isinstance(settings, Settings):
+        raise TypeError("settings must be a Settings instance")
+    SERIAL_PORT = settings.serial_port
+    BAUD_RATE = settings.baud_rate
+    FPS = settings.fps
+    SCREEN_WIDTH = settings.screen_width
+    SCREEN_HEIGHT = settings.screen_height
+    ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT
+    STRIKE_LINE_Y = SCREEN_HEIGHT - 200
+    TILE_WIDTH = SCREEN_WIDTH // 4
+    KEYBINDS = {
+        ord(key.lower()): int(lane.rsplit("_", 1)[1])
+        for lane, key in settings.keybinds.items()
+    }
+
+
+def current_settings() -> Settings:
+    """Return the current legacy values as a typed Settings value."""
+    keybinds = {
+        f"lane_{lane}": pygame.key.name(key)
+        for key, lane in KEYBINDS.items()
+    }
+    return Settings(SERIAL_PORT, BAUD_RATE, keybinds, FPS, SCREEN_WIDTH, SCREEN_HEIGHT)
 
 # Tile properties
 BEAT_MAP = {

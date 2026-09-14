@@ -39,19 +39,23 @@ class GameScreen:
         self.assets = self.load_assets()
         self.sounds = self.load_sounds()
         self.pitch_map = self._create_pitch_map()
-        self.arduino = arduino_handler if arduino_handler else ArduinoHandler()  # Use provided handler or create new
+        self.arduino = (
+            arduino_handler
+            if arduino_handler
+            else ArduinoHandler(config.SERIAL_PORT, config.BAUD_RATE)
+        )
+        self.keybinds = dict(config.KEYBINDS)
         self.reset_game_state()
 
     def update_arduino_handler(self, arduino_handler):
         """Update the ArduinoHandler instance."""
-        if self.arduino:
-            self.arduino.close()  # Close the existing connection
         self.arduino = arduino_handler
         print("GameScreen ArduinoHandler updated.")
 
     def update_keybinds(self, keybinds):
         """Update keybinds from SettingsScreen."""
-        config.KEYBINDS = keybinds
+        self.keybinds = dict(keybinds)
+        config.KEYBINDS = dict(keybinds)
         print("GameScreen keybinds updated.")
 
     def reset_game_state(self):
@@ -211,8 +215,8 @@ class GameScreen:
         taps = []
         if arduino_taps:
             taps.extend(arduino_taps)
-        if event is not None and event.type == pygame.KEYDOWN and event.key in config.KEYBINDS:
-            taps.append(config.KEYBINDS[event.key])
+        if event is not None and event.type == pygame.KEYDOWN and event.key in self.keybinds:
+            taps.append(self.keybinds[event.key])
 
         for lane_idx in set(taps):
             self._process_tap(lane_idx, self.game_time)
@@ -315,7 +319,7 @@ class GameScreen:
                 is_held = self.autoplay
                 lanes = [tile.lane] if isinstance(tile.lane, int) else tile.lane
                 for l in lanes:
-                    if l in arduino_held_lanes or any(keys_held[key] and lane == l for key, lane in config.KEYBINDS.items()):
+                    if l in arduino_held_lanes or any(keys_held[key] and lane == l for key, lane in self.keybinds.items()):
                         is_held = True
 
                 if is_held:

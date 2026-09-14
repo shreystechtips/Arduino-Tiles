@@ -1,0 +1,20 @@
+[project]
+name = "arduino-tiles"
+version = "0.1.0"
+description = "A rhythm game controlled by Arduino tiles"
+requires-python = ">=3.9"
+dependencies = [
+    "platformdirs>=4.3,<5",
+    "pygame-ce>=2.5,<3",
+    "pyserial>=3.5,<4",
+]
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.16,<7",
+    "pytest>=8.3,<9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

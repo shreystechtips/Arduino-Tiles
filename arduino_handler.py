@@ -7,9 +7,9 @@ import config
 class ArduinoHandler:
     """Handles serial communication with the Arduino."""
 
-    def __init__(self, port=config.SERIAL_PORT, baud_rate=config.BAUD_RATE):
+    def __init__(self, port, baud_rate=None):
         self.port = port
-        self.baud_rate = baud_rate
+        self.baud_rate = config.BAUD_RATE if baud_rate is None else baud_rate
         self.ser = None
         self.connected = False
         self.last_state = [False, False, False, False]
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     print("--- Arduino Handler Test ---")
     print(f"Attempting to connect to Arduino on {config.SERIAL_PORT}...")
 
-    arduino = ArduinoHandler()
+    arduino = ArduinoHandler(config.SERIAL_PORT, config.BAUD_RATE)
 
     if not arduino.connected:
         print("Test finished: Could not connect to Arduino.")
