@@ -76,6 +76,17 @@ class GameApp:
         except (OSError, ValueError) as exc:
             print(f"Could not save settings: {exc}")
 
+    def handle_settings_result(self, result):
+        """Handle a settings-screen result and report whether the app keeps running."""
+        if result['action'] == 'quit':
+            return False
+        if result['action'] == 'apply':
+            self.apply_settings(result['settings'])
+            self.state = 'title'
+        elif result['action'] in {'cancel', 'back'}:
+            self.state = 'title'
+        return True
+
     def run(self):
         """Main application loop."""
         running = True
@@ -113,17 +124,8 @@ class GameApp:
             elif self.state == 'settings':
                 result = self.settings_screen.run(self.clock)
                 if result:
-                    if result['action'] == 'quit':
+                    if not self.handle_settings_result(result):
                         running = False
-                    elif result['action'] == 'apply':
-                        self.apply_settings(result['settings'])
-                        self.state = 'title'
-                    elif result['action'] == 'back':
-                        # Update GameScreen with new ArduinoHandler and keybinds
-                        self.arduino = result.get('arduino_handler', self.arduino)
-                        self.game_screen.update_arduino_handler(self.arduino)
-                        self.game_screen.update_keybinds(result.get('keybinds', config.KEYBINDS))
-                        self.state = 'title'
 
         self.arduino.close()
         pygame.quit()

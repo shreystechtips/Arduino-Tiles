@@ -152,6 +152,7 @@ def test_apply_settings_recreates_serial_consumer_and_persists(monkeypatch):
     app.apply_settings(updated)
 
     assert app.settings == updated
+    assert config.FPS == 120
     assert original_arduino.close_count == 1
     assert app.arduino is app.game_screen.arduino
     assert (app.arduino.port, app.arduino.baud_rate) == ("COM9", 57600)
@@ -238,6 +239,7 @@ def test_apply_settings_keeps_accepted_values_when_persistence_fails(monkeypatch
     app.apply_settings(updated)
 
     assert app.settings == updated
+    assert config.FPS == 90
 
 
 def test_settings_cancel_returns_to_title_without_applying_changes():
@@ -246,7 +248,7 @@ def test_settings_cancel_returns_to_title_without_applying_changes():
 
     assert app.handle_settings_result({"action": "cancel"}) is True
     assert app.state == "title"
-    assert config.FPS == 90
+    assert config.FPS == 60
 
 
 def test_game_screen_uses_its_updated_keybinds_for_input():
